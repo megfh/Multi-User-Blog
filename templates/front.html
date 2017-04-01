@@ -4,7 +4,32 @@
 
   {% for p in posts %}
     {{ p.render() | safe }}
-    <br><br>
+
+    {% if p.likes == 1 %}
+      {{ p.likes }} person likes this post
+    {% else %}
+      {{ p.likes }} people like this post
+    {% endif %}
+    {% if user %}
+      {% if user.name != p.author %}
+        {% if user.name not in p.likers %}
+          <div class="like-post">
+            <form action="/blog/like/{{p.key().id()}}" method="post">
+              <input type="submit" value="like">
+            </form>
+          </div>
+        {% elif user.name in p.likers %}
+          <div class="unlike-post">
+            <form action="/blog/unlike/{{p.key().id()}}" method="post">
+              <input type="submit" value="unlike">
+            </form>
+          </div>
+        {% endif %}
+      {% endif %}
+    {% endif %}
   {% endfor %}
 
+
 {% endblock %}
+
+

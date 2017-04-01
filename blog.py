@@ -6,6 +6,7 @@ import random
 import hashlib
 import hmac
 from string import letters
+import time
 
 import webapp2
 import jinja2
@@ -117,7 +118,6 @@ class User(db.Model):
         if u and valid_pw(name, pw, u.pw_hash):
             return u
 
-
 ##### blog stuff
 
 def blog_key(name = 'default'):
@@ -125,7 +125,10 @@ def blog_key(name = 'default'):
 
 class Post(db.Model):
     subject = db.StringProperty(required = True)
+    author = db.StringProperty(required = True)
     content = db.TextProperty(required = True)
+    likes = db.IntegerProperty()
+    likers = db.StringListProperty()
     created = db.DateTimeProperty(auto_now_add = True)
     last_modified = db.DateTimeProperty(auto_now = True)
 
@@ -136,7 +139,7 @@ class Post(db.Model):
 class BlogFront(BlogHandler):
     def get(self):
         posts = greetings = Post.all().order('-created')
-        self.render('front.html', posts = posts)
+        self.render('front.html', posts = posts, user = self.user)
 
 class PostPage(BlogHandler):
     def get(self, post_id):
@@ -164,12 +167,170 @@ class NewPost(BlogHandler):
         content = self.request.get('content')
 
         if subject and content:
-            p = Post(parent = blog_key(), subject = subject, content = content)
+            p = Post(parent = blog_key(), subject = subject, content = content, author = str(self.user.name), likes = 0)
             p.put()
             self.redirect('/blog/%s' % str(p.key().id()))
         else:
             error = "subject and content, please!"
             self.render("newpost.html", subject=subject, content=content, error=error)
+
+# TODO
+class Edit(BlogHandler):
+    def get(self, post_id):
+        # UNSURE
+        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+        post = db.get(key)
+        if not self.user:
+            error = "You must be logged in to edit a post"
+            self.render("permalink.html", post = post, error = error)
+        elif self.user.name != post.author:
+            # popup error message
+            # return to /blog
+            error = "You do not have permission to edit this post"
+            self.render("permalink.html", post = post, error = error)
+            # self.redirect('/blog')
+        else:
+            self.render("edit.html", post = post)
+
+    def post(self, post_id):
+        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+        post = db.get(key)
+        if self.user.name != post.author:
+            # popup error message
+            # return to /blog
+            self.redirect('/blog')
+
+        subject = self.request.get('subject')
+        content = self.request.get('content')
+
+        if subject and content:
+            post.subject = subject
+            post.content = content
+            post.put()
+            self.redirect('/blog/%s' % str(post.key().id()))
+
+class DeletePost(BlogHandler):
+    def get(self, post_id):
+        # UNSURE
+        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+        post = db.get(key)
+        if not self.user:
+            error = "You must be logged in to edit or delete a post"
+            self.render("permalink.html", post = post, error = error)
+        elif self.user.name != post.author:
+            # popup error message
+            # return to /blog
+            error = "You do not have permission to edit or delete this post"
+            self.render("permalink.html", post = post, error = error)
+            # self.redirect('/blog')
+        else:
+            self.render("delete-post.html", post = post)
+
+    def post(self, post_id):
+        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+        post = db.get(key)
+        if self.user.name != post.author:
+            # popup error message
+            # return to /blog
+            self.redirect('/blog')
+
+        answer = self.request.get('answer')
+
+        if answer == "yes":
+            # DELETE POST FROM DATASTORE AND REDIRECT TO /blog
+            post.delete()
+            self.redirect('/blog')
+        else:
+            # redirect back to post page
+            self.redirect('/blog/%s' % str(post.key().id()))
+
+class LikePost(BlogHandler):
+    def post(self, post_id):
+        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+        post = db.get(key)
+
+        if not self.user:
+            error = "You must be logged in to like a post"
+            self.render("permalink.html", post = post, error = error)
+        elif self.user.name == post.author:
+            # popup error message
+            # return to /blog
+            error = "You cannot like your own post"
+            self.render("permalink.html", post = post, error = error)
+            # self.redirect('/blog')
+        else:
+
+            if self.user.name not in post.likers:
+                post.likes = post.likes + 1
+                post.likers.append(self.user.name)
+
+                if self.user.name != post.author:
+                    post.put()
+                    time.sleep(0.1)
+                    self.redirect('/blog')
+            else:
+                self.redirect('/blog')
+
+class UnlikePost(BlogHandler):
+    # TODO
+    def post(self, post_id):
+        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+        post = db.get(key)
+
+        if not self.user:
+            error = "You must be logged in to unlike a post"
+            self.render("permalink.html", post = post, error = error)
+        elif self.user.name == post.author:
+            error = "You cannot unlike your own post"
+            self.render("permalink.html", post = post, error = error)
+        elif self.user.name in post.likers:
+            # remove from likers
+            post.likers.remove(self.user.name)
+            post.likes = post.likes - 1
+            post.put()
+            time.sleep(0.1)
+            self.redirect('/blog')
+
+#create a Comment class
+# class Comment(db.Model):
+#     comment = db.TextProperty(required = True)
+#     commentAuthor = db.StringProperty(required = True)
+#     commentID = db.IntegerProperty(required = True)
+#     created = db.DateTimeProperty(auto_now_add = True)
+
+# class NewComment(BlogHandler):
+#     def get(self, post_id):
+#         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+#         post = db.get(key)
+
+#         if not self.user:
+#             error = "you need to be logged in to comment on posts"
+#             self.render("login.html", error=error)
+#         else:
+#             self.render("new-comment.html", p=post)
+
+#     def post(self, post_id):
+#         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+#         post = db.get(key)
+
+#         comment_og = self.request.get('comment')
+#         comment = comment_og.replace('\n', '<br>')
+#         commentAuthor = self.user.name
+#         commentID = int(p.key().id())
+
+#         if self.user:
+#             if commentAuthor and comment and commentID:
+#                 c = Comment(parent = blog_key(), comment=comment,
+#                             commentAuthor=commentAuthor, commentID = commentID)
+#                 c.put()
+#                 self.redirect("/blog")
+#             else:
+#                 error = "You have to enter text in the comment field!"
+#                 return self.render("newcomment.html", p=post, error=error)
+
+
+    # TODO
+    # check user is not trying to comment on their own post
 
 # regular expressions/functions to check for valid user names/passwords/emails on signup
 USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
@@ -265,6 +426,9 @@ class Welcome(BlogHandler):
         else:
             self.redirect('/signup')
 
+# ('/blog/newcomment/([0-9]+)', NewComment),
+# ('/blog/like/([0-9]+)', LikePost),
+# ('/blog/unlike/([0-9]+)', UnlikePost),
 
 app = webapp2.WSGIApplication([('/', MainPage),
                                ('/blog/?', BlogFront),
@@ -274,5 +438,9 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/login', Login),
                                ('/logout', Logout),
                                ('/welcome', Welcome),
+                               ('/blog/edit/([0-9]+)', Edit),
+                               ('/blog/delete/([0-9]+)', DeletePost),
+                               ('/blog/like/([0-9]+)', LikePost),
+                               ('/blog/unlike/([0-9]+)', UnlikePost),
                                ],
                               debug=True)
