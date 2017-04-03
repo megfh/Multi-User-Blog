@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>edit comment</h2>
+    <div class="interactive">
+      <div class="delete-comment">
+        <a class="delete-comment-link" href="/blog/deletecomment/{{c.key().id()}}">delete comment</a>
+      </div>
+    </div>
+    <form method="post">
+      <label>
+        <div>comment</div>
+        <textarea name="content">{{c.comment}}</textarea>
+      </label>
+
+      <div class="error">{{error}}</div>
+
+      <input type="submit">
+    </form>
+{% endblock %}

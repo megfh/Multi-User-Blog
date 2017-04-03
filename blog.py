@@ -70,7 +70,7 @@ def render_post(response, post):
 
 class MainPage(BlogHandler):
   def get(self):
-      self.write('Hello, world!')
+      self.redirect('/blog')
 
 
 ##### user stuff
@@ -145,12 +145,13 @@ class PostPage(BlogHandler):
     def get(self, post_id):
         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
         post = db.get(key)
+        comments = db.GqlQuery("SELECT * FROM Comment where commentID =:1 ORDER BY created ASC", int(post.key().id()))
 
         if not post:
             self.error(404)
             return
 
-        self.render("permalink.html", post = post)
+        self.render("permalink.html", p = post, comments = comments)
 
 class NewPost(BlogHandler):
     def get(self):
@@ -224,7 +225,7 @@ class DeletePost(BlogHandler):
             self.render("permalink.html", post = post, error = error)
             # self.redirect('/blog')
         else:
-            self.render("delete-post.html", post = post)
+            self.render("delete-post.html", p = post)
 
     def post(self, post_id):
         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
@@ -239,6 +240,7 @@ class DeletePost(BlogHandler):
         if answer == "yes":
             # DELETE POST FROM DATASTORE AND REDIRECT TO /blog
             post.delete()
+            time.sleep(0.2)
             self.redirect('/blog')
         else:
             # redirect back to post page
@@ -291,46 +293,102 @@ class UnlikePost(BlogHandler):
             time.sleep(0.1)
             self.redirect('/blog')
 
-#create a Comment class
-# class Comment(db.Model):
-#     comment = db.TextProperty(required = True)
-#     commentAuthor = db.StringProperty(required = True)
-#     commentID = db.IntegerProperty(required = True)
-#     created = db.DateTimeProperty(auto_now_add = True)
+# create a Comment class
+class Comment(db.Model):
+    comment = db.TextProperty(required = True)
+    commentAuthor = db.StringProperty(required = True)
+    commentID = db.IntegerProperty(required = True)
+    created = db.DateTimeProperty(auto_now_add = True)
 
-# class NewComment(BlogHandler):
-#     def get(self, post_id):
-#         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
-#         post = db.get(key)
+class NewComment(BlogHandler):
+    def get(self, post_id):
+        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+        post = db.get(key)
 
-#         if not self.user:
-#             error = "you need to be logged in to comment on posts"
-#             self.render("login.html", error=error)
-#         else:
-#             self.render("new-comment.html", p=post)
+        if not self.user:
+            error = "you need to be logged in to comment on posts"
+            self.render("login-form.html", error=error)
+        else:
+            self.render("new-comment.html", p=post)
 
-#     def post(self, post_id):
-#         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
-#         post = db.get(key)
+    def post(self, post_id):
+        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+        post = db.get(key)
 
-#         comment_og = self.request.get('comment')
-#         comment = comment_og.replace('\n', '<br>')
-#         commentAuthor = self.user.name
-#         commentID = int(p.key().id())
+        comment_og = self.request.get('comment')
+        comment = comment_og.replace('\n', '<br>')
+        commentAuthor = self.user.name
+        commentID = int(post.key().id())
 
-#         if self.user:
-#             if commentAuthor and comment and commentID:
-#                 c = Comment(parent = blog_key(), comment=comment,
-#                             commentAuthor=commentAuthor, commentID = commentID)
-#                 c.put()
-#                 self.redirect("/blog")
-#             else:
-#                 error = "You have to enter text in the comment field!"
-#                 return self.render("newcomment.html", p=post, error=error)
+        if self.user:
+            if commentAuthor and comment and commentID:
+                c = Comment(parent = blog_key(), comment=comment,
+                            commentAuthor=commentAuthor, commentID = commentID)
+                c.put()
+                time.sleep(0.1)
+                self.redirect("/blog/%s" % str(post.key().id()))
+            else:
+                error = "You have to enter text in the comment field!"
+                return self.render("new-comment.html", p=post, error=error)
+
+class EditComment(BlogHandler):
+    def get(self, comment_id):
+        key = db.Key.from_path('Comment', int(comment_id), parent = blog_key())
+        c = db.get(key)
+
+        if not c:
+            self.error(404)
+            return
+
+        if self.user:
+            self.render("edit-comment.html", c = c)
+        else:
+            error = "you need to be logged in to edit comments"
+            self.render("login-form.html", error = error)
+
+    def post(self, comment_id):
+        key = db.Key.from_path('Comment', int(comment_id), parent = blog_key())
+        c = db.get(key)
+
+        newComment = self.request.get('content')
+        comment = newComment.replace('\n', '<br>')
+
+        if self.user:
+            c.comment = comment
+            c.put()
+            time.sleep(0.1)
+            self.redirect('/blog')
+
+class DeleteComment(BlogHandler):
+    def get(self, comment_id):
+        # UNSURE
+        key = db.Key.from_path('Comment', int(comment_id), parent=blog_key())
+        c = db.get(key)
+        if not self.user:
+            error = "You must be logged in to edit or delete a comment"
+            self.render("login-form.html", error = error)
+        elif self.user.name != c.commentAuthor:
+            error = "You do not have permission to edit or delete this comment"
+            self.render("comment-permalink.html", error = error)
+        else:
+            self.render("delete-comment.html", c = c)
+
+    def post(self, comment_id):
+        key = db.Key.from_path('Comment', int(comment_id), parent=blog_key())
+        c = db.get(key)
+
+        answer = self.request.get('answer')
+
+        if answer == "yes":
+            # DELETE POST FROM DATASTORE AND REDIRECT TO /blog
+            c.delete()
+            time.sleep(0.2)
+            self.redirect('/blog')
+        else:
+            # redirect back to post page
+            self.redirect('/blog/%s' % c.commentID)
 
 
-    # TODO
-    # check user is not trying to comment on their own post
 
 # regular expressions/functions to check for valid user names/passwords/emails on signup
 USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
@@ -442,5 +500,8 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/blog/delete/([0-9]+)', DeletePost),
                                ('/blog/like/([0-9]+)', LikePost),
                                ('/blog/unlike/([0-9]+)', UnlikePost),
+                               ('/blog/newcomment/([0-9]+)', NewComment),
+                               ('/blog/editcomment/([0-9]+)', EditComment),
+                               ('/blog/deletecomment/([0-9]+)', DeleteComment),
                                ],
                               debug=True)
