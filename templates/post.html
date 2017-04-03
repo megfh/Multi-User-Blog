@@ -1,7 +1,10 @@
 <div class="post">
   <div class="post-heading">
     <div class="post-title">
-      {{p.subject}}
+      <a href="/blog/{{p.key().id()}}">{{p.subject}}</a>
+    </div>
+    <div class="post-author">
+      by: {{p.author}}
     </div>
 
     <div class="post-date">
@@ -11,5 +14,11 @@
 
   <div class="post-content">
     {{p._render_text | safe}}
+    <br>
   </div>
+  <hr>
 </div>
+
+
+
+
