@@ -5,28 +5,47 @@
   {% for p in posts %}
     {{ p.render() | safe }}
 
-    {% if p.likes == 1 %}
-      {{ p.likes }} person likes this post
-    {% else %}
-      {{ p.likes }} people like this post
-    {% endif %}
-    {% if user %}
-      {% if user.name != p.author %}
-        {% if user.name not in p.likers %}
-          <div class="like-post">
-            <form action="/blog/like/{{p.key().id()}}" method="post">
-              <input type="submit" value="like">
-            </form>
-          </div>
-        {% elif user.name in p.likers %}
-          <div class="unlike-post">
-            <form action="/blog/unlike/{{p.key().id()}}" method="post">
-              <input type="submit" value="unlike">
-            </form>
-          </div>
+    <div class="interactive">
+      <span class="display-likes">
+        {% if p.likes == 1 %}
+          {{ p.likes }} person likes this post
+        {% else %}
+          {{ p.likes }} people like this post
         {% endif %}
+      </span>
+
+      {% if user %}
+        {% if user.name != p.author %}
+          {% if user.name not in p.likers %}
+            <span class="like-post">
+              <form action="/blog/like/{{p.key().id()}}" method="post">
+                <input type="submit" value="like">
+              </form>
+            </span>
+          {% elif user.name in p.likers %}
+            <span class="unlike-post">
+              <form action="/blog/unlike/{{p.key().id()}}" method="post">
+                <input type="submit" value="unlike">
+              </form>
+            </span>
+          {% endif %}
+        {% elif user.name == p.author %}
+          <span class="edit">
+            <a class="edit-link" href="/blog/edit/{{p.key().id()}}">edit</a>
+          </span>
+          <span class="delete">
+            <a class="delete-link" href="/blog/delete/{{p.key().id()}}">delete</a>
+          </span>
+        {% endif %}
+        <span class="new-comment">
+          <form action="/blog/newcomment/{{p.key().id()}}" method="get">
+            <input type="submit" value="leave a comment">
+          </form>
+        </span>
       {% endif %}
-    {% endif %}
+    </div>
+    <br><br>
+
   {% endfor %}
 
 
