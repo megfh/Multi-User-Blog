@@ -1,5 +1,4 @@
-# Multi-User-Blog
-Udacity Project: Multi User Blog
+# Udacity Project: Multi User Blog
 
 This project builds off the content of Udacity's Intro to Backend course to implement a multi user blog. Users can signup, login/logout, write/edit/delete posts, like other users posts, and add/edit/delete comments.
 
