@@ -55,8 +55,18 @@ input[type=submit] {
     text-decoration: none;
 }
 
+.login-area {
+    display: block;
+    text-align: right;
+}
+
 .post + .post {
     margin-top: 15px;
+}
+
+.post-author {
+    font-style: italic;
+    color: #7c7f84;
 }
 
 .post-heading {
@@ -65,8 +75,10 @@ input[type=submit] {
 }
 
 .post-title {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: bold;
+    text-decoration: none;
+    margin-bottom: 10px;
 }
 
 .post-date {
@@ -78,6 +90,47 @@ input[type=submit] {
 }
 
 .post-content {
+    margin-top: 10px;
+    font-size: 20px;
+}
+
+.interactive {
+    display: flex;
+    flex-wrap: wrap;
+    color: #7c7f84;
+}
+
+.comment_content {
+    font-size: 16px;
+}
+
+.comment_author {
+    font-style: italic;
+    color: #7c7f84;
+}
+
+.comment-interactive {
+    display: flex;
+    flex-wrap: wrap;
     margin-top: 5px;
 }
+
+.comment-interactive span {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.comment-interactive span:not(:first-child){
+    border-left: 1px solid #000;
+}
+
+.interactive span {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.interactive span:not(:first-child){
+    border-left:1px solid #000;
+}
+
 
