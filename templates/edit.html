@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>edit post</h2>
+    <div class="interactive">
+      <div class="delete">
+        <a class="delete-link" href="/blog/delete/{{post.key().id()}}">delete</a>
+      </div>
+    </div>
+    <form method="post">
+      <label>
+        <div>subject</div>
+        <input type="text" name="subject" value="{{post.subject}}">
+      </label>
+
+      <label>
+        <div>blog</div>
+        <textarea name="content">{{post.content}}</textarea>
+      </label>
+
+      <div class="error">{{error}}</div>
+
+      <input type="submit">
+    </form>
+{% endblock %}
