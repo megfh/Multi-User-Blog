@@ -175,21 +175,16 @@ class NewPost(BlogHandler):
             error = "subject and content, please!"
             self.render("newpost.html", subject=subject, content=content, error=error)
 
-# TODO
 class Edit(BlogHandler):
     def get(self, post_id):
-        # UNSURE
         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
         post = db.get(key)
         if not self.user:
             error = "You must be logged in to edit a post"
             self.render("permalink.html", post = post, error = error)
         elif self.user.name != post.author:
-            # popup error message
-            # return to /blog
             error = "You do not have permission to edit this post"
             self.render("permalink.html", post = post, error = error)
-            # self.redirect('/blog')
         else:
             self.render("edit.html", post = post)
 
@@ -197,8 +192,6 @@ class Edit(BlogHandler):
         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
         post = db.get(key)
         if self.user.name != post.author:
-            # popup error message
-            # return to /blog
             self.redirect('/blog')
 
         subject = self.request.get('subject')
@@ -212,18 +205,14 @@ class Edit(BlogHandler):
 
 class DeletePost(BlogHandler):
     def get(self, post_id):
-        # UNSURE
         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
         post = db.get(key)
         if not self.user:
             error = "You must be logged in to edit or delete a post"
             self.render("permalink.html", post = post, error = error)
         elif self.user.name != post.author:
-            # popup error message
-            # return to /blog
             error = "You do not have permission to edit or delete this post"
             self.render("permalink.html", post = post, error = error)
-            # self.redirect('/blog')
         else:
             self.render("delete-post.html", p = post)
 
@@ -231,8 +220,6 @@ class DeletePost(BlogHandler):
         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
         post = db.get(key)
         if self.user.name != post.author:
-            # popup error message
-            # return to /blog
             self.redirect('/blog')
 
         answer = self.request.get('answer')
@@ -253,13 +240,10 @@ class LikePost(BlogHandler):
 
         if not self.user:
             error = "You must be logged in to like a post"
-            self.render("permalink.html", post = post, error = error)
+            self.render("permalink.html", p = post, error = error)
         elif self.user.name == post.author:
-            # popup error message
-            # return to /blog
             error = "You cannot like your own post"
-            self.render("permalink.html", post = post, error = error)
-            # self.redirect('/blog')
+            self.render("permalink.html", p = post, error = error)
         else:
 
             if self.user.name not in post.likers:
@@ -274,7 +258,6 @@ class LikePost(BlogHandler):
                 self.redirect('/blog')
 
 class UnlikePost(BlogHandler):
-    # TODO
     def post(self, post_id):
         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
         post = db.get(key)
@@ -361,7 +344,6 @@ class EditComment(BlogHandler):
 
 class DeleteComment(BlogHandler):
     def get(self, comment_id):
-        # UNSURE
         key = db.Key.from_path('Comment', int(comment_id), parent=blog_key())
         c = db.get(key)
         if not self.user:
@@ -380,7 +362,7 @@ class DeleteComment(BlogHandler):
         answer = self.request.get('answer')
 
         if answer == "yes":
-            # DELETE POST FROM DATASTORE AND REDIRECT TO /blog
+            # DELETE COMMENT FROM DATASTORE AND REDIRECT TO BLOG
             c.delete()
             time.sleep(0.2)
             self.redirect('/blog')
@@ -438,8 +420,7 @@ class Signup(BlogHandler):
             self.done()
 
     def done(self, *a, **kw):
-        # TODO - dunno if this is right
-        self.redirect('/unit2/welcome?username=' + self.username)
+        self.redirect('/blog')
 
 class Register(Signup):
     def done(self):
@@ -483,10 +464,6 @@ class Welcome(BlogHandler):
             self.render('welcome.html', username = username)
         else:
             self.redirect('/signup')
-
-# ('/blog/newcomment/([0-9]+)', NewComment),
-# ('/blog/like/([0-9]+)', LikePost),
-# ('/blog/unlike/([0-9]+)', UnlikePost),
 
 app = webapp2.WSGIApplication([('/', MainPage),
                                ('/blog/?', BlogFront),
