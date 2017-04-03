@@ -11,6 +11,9 @@
   </head>
 
   <body>
+    {% if error %}
+      {{ error }}
+    {% endif %}
     <h2>Login</h2>
     <form method="post">
       <table>
@@ -39,6 +42,12 @@
 
       <input type="submit">
     </form>
+
+    <br><hr><br>
+
+    <div class="signup-link">
+      <p>Don't have an account? <a href="/signup">Sign-up</a></p>
+    </div>
   </body>
 
 </html>
