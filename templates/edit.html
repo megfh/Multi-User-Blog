@@ -3,10 +3,14 @@
 {% block content %}
   <h2>edit post</h2>
     <div class="interactive">
-      <div class="delete">
+      <span class="delete">
         <a class="delete-link" href="/blog/delete/{{post.key().id()}}">delete</a>
-      </div>
+      </span>
+      <span class="cancel">
+        <a href="/blog/{{post.key().id()}}">cancel</a>
+      </span>
     </div>
+    <br>
     <form method="post">
       <label>
         <div>subject</div>
